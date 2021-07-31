@@ -5,6 +5,7 @@ import end from "./end";
 import playlist from "./playlist";
 import stream from "./stream";
 import ns from "./ns";
+import queue from "./queue";
 
 const composer = new Composer();
 
@@ -16,4 +17,5 @@ composer
   .use(playlist)
   .use(end)
   .use(controls)
-  .use(ns);
+  .use(ns)
+  .use(queue);
