@@ -112,7 +112,7 @@ composer.callbackQuery("refresh", async (ctx) => {
   await updateMessage(ctx.message, getIndex(ctx.message), ctx.api);
 });
 
-composer.command("chunk", async (ctx) => {
+composer.command("page", async (ctx) => {
   if (!(await canUseButton(ctx)) || !ctx.message) {
     return;
   }
