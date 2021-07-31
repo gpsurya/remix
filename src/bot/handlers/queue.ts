@@ -22,15 +22,15 @@ function splitItems(items: Item[]) {
   return toReturn;
 }
 
-const listItems = (items: Item[], index = 0) => {
+const listItems = (items: Item[], index: number) => {
   const chunks = splitItems(items);
   const chunk = chunks[index] || chunks[0] || [];
-  let toReturn = "";
+  let toReturn = `Page ${chunks[index] ? index + 1 : 1}.\n\n`;
 
   for (let i in chunk) {
     const item = chunk[i];
 
-    toReturn += `${i + 1}: <a href="${item.url}">${escape(
+    toReturn += `— <a href="${item.url}">${escape(
       item.title
     )}</> by <a href="tg://user?id=${item.requester.id}">${escape(
       item.requester.first_name
@@ -40,37 +40,38 @@ const listItems = (items: Item[], index = 0) => {
   return toReturn;
 };
 
-const getTitle = (displayedLength: number, realLength: number) => {
-  return `Displaying ${displayedLength} items out of ${realLength}.\n\n`;
-};
-
-const updateMessage = async (message: Message, api: Api) => {
+const updateMessage = async (message: Message, index = 0, api: Api) => {
   const queue = queues.getAll(message.chat.id);
-  const items = listItems(queue);
 
   if (queue) {
     api.editMessageText(
       message.chat.id,
       message.message_id,
-      getTitle(items == "" ? 0 : items.split("\n").length, queue.length) +
-        items,
+      listItems(queue, index),
       {
         reply_markup: new InlineKeyboard()
+          .text("➡️", "page")
+          .row()
           .text("⏯", "pause")
           .text("⏩", "skip")
           .row()
           .text("🔀", "shuffle")
           .text("🔄", "refresh"),
+        disable_web_page_preview: true,
       }
     );
   }
 };
+
+const getIndex = (message: Message) =>
+  Number(message.text?.split(/\s/)[0].split(/\s/).slice(0, -1)) - 1;
 
 composer.command(["queue", "q", "list", "ls"], async (ctx) => {
   await updateMessage(
     await ctx.reply(i18n("please_wait"), {
       reply_to_message_id: ctx.message?.message_id,
     }),
+    0,
     ctx.api
   );
 });
@@ -108,5 +109,13 @@ composer.callbackQuery("refresh", async (ctx) => {
     return;
   }
 
-  await updateMessage(ctx.message, ctx.api);
+  await updateMessage(ctx.message, getIndex(ctx.message), ctx.api);
+});
+
+composer.command("chunk", async (ctx) => {
+  if (!(await canUseButton(ctx)) || !ctx.message) {
+    return;
+  }
+
+  await updateMessage(ctx.message, getIndex(ctx.message) + 1, ctx.api);
 });
